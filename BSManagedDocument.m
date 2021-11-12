@@ -1059,7 +1059,9 @@ originalContentsURL:(NSURL *)originalContentsURL
             dispatch_semaphore_signal(semaphore);
         }];
         dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+#if ! __has_feature(objc_arc)
         dispatch_release(semaphore);
+#endif
     }
 }
 
