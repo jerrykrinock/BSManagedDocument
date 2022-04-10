@@ -831,6 +831,7 @@ we use a weak self (`welf`) when compiling with ARC.  We should make these two
         
 #if !__has_feature(objc_arc)
         [welf retain];
+        [welf retain];
 #endif
         // Right, let's get on with it!
         if (![welf writeStoreContentToURL:storeURL error:error])
@@ -843,11 +844,12 @@ we use a weak self (`welf`) when compiling with ARC.  We should make these two
             [welf signalDoneAndMaybeClose];
 #if !__has_feature(objc_arc)
             [welf release];
+            [welf release];
 #endif
             return NO;
         }
         
-        /* 2020-May-17  Damn.  Still seeing crashes here
+        /* 2020-May-17  Damn.  Still seeing crashes at the next line,
          once a week or so when running in Xcode debugger in non-ARC, possibly
          after letting a dialog sit without responding for several minutes,
          or maybe just letting the app sit idle for a few minutes.
@@ -873,6 +875,12 @@ we use a weak self (`welf`) when compiling with ARC.  We should make these two
          Looks like the same as crash type 2 above, but welf got smashed
          by a different object:
          -[_NSCoreDataTaggedObjectID writeAdditionalContent:toURL:originalContentsURL:error:]: unrecognized selector sent to instance
+         
+         2022-Apr-09  Just saw another crash here, in non-ARC.  This time,
+         `welf` was garbage, not an object.  So, from the School of Brute
+         Force Engineering, I added *another* estra retain and release, so
+         now we have *two* extra retains and (in each of three code branches)
+         *two* extra releases sent to `welf`.
          */
         result = [welf writeAdditionalContent:additionalContent toURL:url originalContentsURL:originalContentsURL error:error];
         if (result)
@@ -896,6 +904,7 @@ we use a weak self (`welf`) when compiling with ARC.  We should make these two
             [welf signalDoneAndMaybeClose];
 #if !__has_feature(objc_arc)
             [welf release];
+            [welf release];
 #endif
             return NO;
         }
@@ -911,6 +920,7 @@ we use a weak self (`welf`) when compiling with ARC.  We should make these two
         
         [welf signalDoneAndMaybeClose];
 #if !__has_feature(objc_arc)
+        [welf release];
         [welf release];
 #endif
         return result;
