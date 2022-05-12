@@ -31,7 +31,6 @@ NSString* BSManagedDocumentErrorDomain = @"BSManagedDocumentErrorDomain" ;
 @property(atomic, assign) BOOL isSaving;
 @property(atomic, assign) BOOL shouldCloseWhenDoneSaving;
 @property (atomic, copy) BOOL (^writingBlock)(NSURL*, NSSaveOperationType, NSURL*, NSError**);
-@property (nonatomic, readonly) NSPersistentContainer *persistentContainer;
 @property (nonatomic, readonly) NSPersistentStoreCoordinator *coordinator;
 @property (nonatomic, readonly) NSPersistentStore *store;
 @property (nonatomic, readonly, getter=isCoordinatorConfigured) BOOL coordinatorConfigured;

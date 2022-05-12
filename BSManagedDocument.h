@@ -71,6 +71,8 @@ __attribute__((visibility("default"))) @interface BSManagedDocument : NSDocument
     BOOL    _closing;
 }
 
+@property (nonatomic, readonly) NSPersistentContainer *persistentContainer;
+
 /**
  @return The name of the folder directly inside the document which the persistent store will be saved to.
  
