@@ -148,29 +148,44 @@ NSString* BSManagedDocumentErrorDomain = @"BSManagedDocumentErrorDomain" ;
     return _managedObjectModel;
 }
 
+/*!
+  @details  During initialization, NSDocument creates an instance of
+ NSUndoManager and sets it as its undoManager.  But this has been seen to
+ occur at different points during initialization in different macOS versions.
+ The behavior seems to have changed in macOS 10.12 and again in macOS 13.
+ For the former, see these:
+ 
+ https://github.com/karelia/BSManagedDocument/issues/47
+ https://github.com/karelia/BSManagedDocument/issues/50
+ 
+ In macOS 13, we found that [super undoManager] was returning an NSUndoManager
+ earlier than in earlier macOS versions.  So we now use this quite robust
+ method, overriding -undoManager to insure that it always returns the custom
+ undo manager class, if one has been set.
+ 
+ If no +undoManagerClass has been set, this method just invokes super.
+ */
+- (id)undoManager {
+    Class customUndoManagerClass = self.class.undoManagerClass;
+    if (customUndoManagerClass) {
+        if (![[super undoManager] isKindOfClass:customUndoManagerClass]) {
+            id undoManager = [[customUndoManagerClass alloc] init];
+            self.undoManager = undoManager;
+#if !__has_feature(objc_arc)
+            [undoManager release];
+#endif
+        }
+    }
+    
+    return [super undoManager];
+}
+
 - (BOOL)configurePersistentStoreCoordinatorWithDescription:(NSPersistentStoreDescription *)description
                                                      error:(NSError **)error_p {
     __block NSError *error = nil;
     NSPersistentContainer *container = self.persistentContainer;
     void (^setUndoManagerBlock)(NSManagedObjectContext *) = ^(NSManagedObjectContext *context){
-        /* In macOS 10.11 and earler, the newly-initialized `context`
-         typically found at this point will have a NSUndoManager.  But in
-         macOS 10.12 and later, surprise, it will have nil undo manager.
-         https://github.com/karelia/BSManagedDocument/issues/47
-         https://github.com/karelia/BSManagedDocument/issues/50
-         In either case, this may be not what the developer has specified
-         in overriding +undoManagerClass.  So we test… */
-        if (self.class.undoManagerClass)
-        {
-            /* This branch will always execute, *except* when +undoManagerClass is
-             overridden to return nil. */
-            NSUndoManager *undoManager = [[self.class.undoManagerClass alloc] init];
-            context.undoManager = undoManager;
-#if !__has_feature(objc_arc)
-            [undoManager release];
-#endif
-        }
-        self.undoManager = context.undoManager;
+        context.undoManager = self.undoManager;
     };
 
     description.shouldAddStoreAsynchronously = NO;
