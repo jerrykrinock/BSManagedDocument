@@ -21,7 +21,7 @@
 //
 //  *   Saves to a file package
 //
-//  *   On 10.7+, asynchronous saving is supported. We insert a parent context between the persistent store coordinator and the     "main" managed object context (the one with main queue concurrency type that is returned by -managedObjectContext).  The parent context is of private queue concurrency type and therefore saves on its own thread.  (Note that, even as late as macOS 10.15 in September 2019, NSPersistendDocument still does *not* support asynchronous saving.  (See Apple documentation > AppKit > NSPersistentDocument > Overview > Important.
+//  *   On 10.7+, asynchronous saving is supported. We insert a parent context between the persistent store coordinator and the     "main" managed object context (the one with main queue concurrency type that is returned by -managedObjectContext).  The parent context is of private queue concurrency type and therefore saves on its own thread.  (Note that, even as late as macOS 10.15 in September 2019, NSPersistentDocument still does *not* support asynchronous saving.  (See Apple documentation > AppKit > NSPersistentDocument > Overview > Important.
 //
 //  *   Full support for concurrent document opening too
 //
