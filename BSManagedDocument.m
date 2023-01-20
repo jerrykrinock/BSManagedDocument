@@ -555,7 +555,6 @@ operation is completed.
         
 #if !__has_feature(objc_arc)
         [welf retain];
-        [welf retain];
 #endif
         // Right, let's get on with it!
         if (![welf writeStoreContentToURL:storeURL error:error])
@@ -568,43 +567,19 @@ operation is completed.
             [welf signalDoneAndMaybeClose];
 #if !__has_feature(objc_arc)
             [welf release];
-            [welf release];
 #endif
             return NO;
         }
         
-        /* 2020-May-17  Damn.  Still seeing crashes at the next line,
-         once a week or so when running in Xcode debugger in non-ARC, possibly
-         after letting a dialog sit without responding for several minutes,
-         or maybe just letting the app sit idle for a few minutes.
-         I have seen two types of crashes:
-         
-         1.  Unexplained EXC_BAD_ACCESS
-         2.  -[CAContextImpl writeAdditionalContent:toURL:originalContentsURL:error:]: unrecognized selector sent to instance …
-         
-         Crash type number 2 implies that the weak self `welf` is gone and the
-         message is being sent to some other object which took its memory, but
-         why does it crash *here* when, in the lines above, many messages are
-         sent to `welf` and none of those ever crash?
-         
-         Maybe the call to -writeStoreContentToURL:error: waits for the save
-         to happen, and that is when `welf` disappears.  To save time, I am
-         going to skip the analysis and try to fix this with something that
-         should do no harm in any case: Send `welf` a -retain above and balance
-         with a -release before each of the two `return` statements, below.
-         If you see no further comment here for the rest of year 2020, that
-         means that this fix worked.  It does make sense, at least :)
-         
-         2020-Jul-14  Still making crashes here, with macOS 11 Beta 2.
-         Looks like the same as crash type 2 above, but welf got smashed
-         by a different object:
-         -[_NSCoreDataTaggedObjectID writeAdditionalContent:toURL:originalContentsURL:error:]: unrecognized selector sent to instance
-         
-         2022-Apr-09  Just saw another crash here, in non-ARC.  This time,
-         `welf` was garbage, not an object.  So, from the School of Brute
-         Force Engineering, I added *another* estra retain and release, so
-         now we have *two* extra retains and (in each of three code branches)
-         *two* extra releases sent to `welf`.
+        /* You will sometimes see a crash at the next line if built without ARC.
+         Upon debugging, I found that, for some reason which I do not
+         understand, although log welf (self) appears to be a good object if
+         you break on the the final `return` in -writeStoreContentToURL:error:,
+         after returning to this method, it is garbage.  While trying
+         unsuccessfully to understand this, I confirmed that, in a
+         particularly bad test case which crashed here in 5/10 trials when
+         built without ARC, it crashed in 0/10 trials with ARC.  Conclusion:
+         If you are having trouble with crashes at the next line, use ARC!
          */
         result = [welf writeAdditionalContent:additionalContent toURL:url originalContentsURL:originalContentsURL error:error];
         if (result)
@@ -628,7 +603,6 @@ operation is completed.
             [welf signalDoneAndMaybeClose];
 #if !__has_feature(objc_arc)
             [welf release];
-            [welf release];
 #endif
             return NO;
         }
@@ -644,7 +618,6 @@ operation is completed.
         
         [welf signalDoneAndMaybeClose];
 #if !__has_feature(objc_arc)
-        [welf release];
         [welf release];
 #endif
         return result;
