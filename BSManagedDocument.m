@@ -464,7 +464,7 @@ operation is completed.
     }
     
 #if __has_feature(objc_arc)
-    __weak typeof(self) welf = self;
+    __weak BSManagedDocument* welf = self;
 #else
     // __weak was meaningless in non-ARC; generates a compiler warning
     BSManagedDocument* welf = self;
@@ -884,13 +884,19 @@ operation is completed.
                     // This looks like NSDocument is trying to preserve a document version prior to a Revert.
                     self.autosavedContentsFileURL = absoluteURL;
                 } else if (![absoluteURL isEqual:self.autosavedContentsFileURL]) {
+#if __has_feature(objc_arc)
+                    __weak BSManagedDocument* welf = self;
+#else
+                    // __weak was meaningless in non-ARC; generates a compiler warning
+                    BSManagedDocument* welf = self;
+#endif
                     // We're supposed to blast a copy out somewhere else e.g.:
                     // * A temporary Share location
                     // * A Duplicate location in the autosave folder
                     // We ensured the disk copy is up-to-date earlier inside the overrides to
                     // duplicateAndReturnError: and shareDocumentWithSharingService:completionHandler:
                     self.writingBlock = ^(NSURL *url, NSSaveOperationType saveOperation, NSURL *originalContentsURL, NSError **error) {
-                        return [self writeBackupToURL:url error:error];
+                        return [welf writeBackupToURL:url error:error];
                     };
                 }
             }
@@ -1111,7 +1117,7 @@ originalContentsURL:(NSURL *)originalContentsURL
     return YES;
 }
 
-- (BOOL)writeStoreContentToURL:(NSURL *)storeURL error:(NSError **)error;
+- (BOOL)writeStoreContentToURL:(NSURL *)storeURL error:(NSError *__autoreleasing*)error;
 {
     // First update metadata
     __block BOOL result = [self updateMetadataForPersistentStore:self.store error:error];
