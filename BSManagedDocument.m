@@ -21,6 +21,7 @@
 #import "BSManagedDocument.h"
 
 #import <objc/message.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 NSString* BSManagedDocumentDidSaveNotification = @"BSManagedDocumentDidSaveNotification" ;
 NSString* BSManagedDocumentErrorDomain = @"BSManagedDocumentErrorDomain" ;
@@ -836,7 +837,10 @@ operation is completed.
     // BSManagedDocument supplies. e.g. an alternative format for exporting, say. If so, they don't
     // want our custom logic kicking in when writing it, so test for that as best we can.
     // https://github.com/karelia/BSManagedDocument/issues/36#issuecomment-91773320
-	if ([NSWorkspace.sharedWorkspace type:self.fileType conformsToType:typeName]) {
+    // -[NSWorkspace type:conformsToType:] was deprecated in macOS 12.0; use UTType instead.
+    UTType* documentUTType = [UTType typeWithIdentifier:self.fileType] ;
+    UTType* requestedUTType = [UTType typeWithIdentifier:typeName] ;
+	if (documentUTType && requestedUTType && [documentUTType conformsToType:requestedUTType]) {
         
 		// At this point, we've either captured all document content, or are writing on the main thread, so it's fine to unblock the UI
 		[self unblockUserInteraction];
